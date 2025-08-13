@@ -1,9 +1,9 @@
 import express from 'express';
 import ProcessedMessage from '../models/ProcessedMessage.js';
+import { io } from '../index.js';
 
 const router = express.Router();
 
-// Get all conversations grouped by wa_id
 router.get('/conversations', async (req, res) => {
   try {
     const conversations = await ProcessedMessage.aggregate([
@@ -24,7 +24,6 @@ router.get('/conversations', async (req, res) => {
   }
 });
 
-// Get all messages for a specific wa_id
 router.get('/messages/:wa_id', async (req, res) => {
   try {
     const messages = await ProcessedMessage.find({ wa_id: req.params.wa_id })
@@ -32,6 +31,55 @@ router.get('/messages/:wa_id', async (req, res) => {
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/messages', async (req, res) => {
+  try {
+    const { wa_id, name, text } = req.body;
+    if (!wa_id || !text) {
+      return res.status(400).json({ error: "wa_id and text are required" });
+    }
+
+    const newMsg = await ProcessedMessage.create({
+      wa_id,
+      name,
+      from: "918329446654", 
+      text,
+      messageId: `local-${Date.now()}`, 
+      meta_msg_id: null,
+      status: "sent",
+      timestamp: new Date()
+    });
+
+    io.emit("message", newMsg);
+
+    res.json(newMsg);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// for testing
+router.post('/messages/status', async (req, res) => {
+  try {
+    const { id, meta_msg_id, status } = req.body;
+    if (!status || (!id && !meta_msg_id)) return res.status(400).json({ error: 'status and id/meta_msg_id are required' });
+
+    const updated = await ProcessedMessage.findOneAndUpdate(
+      { $or: [{ messageId: id }, { meta_msg_id }] },
+      { status },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'Message not found' });
+
+
+    io.emit('status_update', updated);
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
