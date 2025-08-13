@@ -29,7 +29,7 @@ export default function HomePage() {
   if (msg.from === msg.wa_id) {
   
     setConversations((prev) => {
-      let updated = prev.map((c) =>
+      const updated = prev.map((c) =>
         c._id === msg.wa_id
           ? { ...c, lastMessage: msg.text, lastTimestamp: msg.timestamp }
           : c
@@ -79,7 +79,7 @@ export default function HomePage() {
   const handleNewMessage = (msg: Message) => {
     setMessages((prev) => [...prev, msg]);
     setConversations((prev) => {
-      let updated = prev.map((c) =>
+      const updated = prev.map((c) =>
         c._id === msg.wa_id
           ? { ...c, lastMessage: msg.text, lastTimestamp: msg.timestamp }
           : c
