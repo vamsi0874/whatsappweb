@@ -1,7 +1,3 @@
-hello
-
-
-
 
 
 ## 🛠️ Tech Stack
